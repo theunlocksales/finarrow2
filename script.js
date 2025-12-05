@@ -1,6 +1,6 @@
 // ============================================
-// FINARROW - PROFESSIONAL WEBSITE JAVASCRIPT
-// Animations, Navigation, Counters, WhatsApp, Forms
+// FINARROW - COMPLETE JAVASCRIPT
+// All Functionality Included
 // ============================================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ===== Navbar scroll state =====
+    // ===== Navbar Scroll Effect =====
     window.addEventListener('scroll', () => {
         if (window.scrollY > 80) {
             navbar.classList.add('scrolled');
@@ -34,40 +34,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ===== Smooth scroll for in-page anchors =====
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', e => {
-            const href = anchor.getAttribute('href');
-            if (href && href.length > 1) {
-                e.preventDefault();
-                const target = document.querySelector(href);
-                if (!target) return;
-
-                const targetY = target.getBoundingClientRect().top + window.scrollY - 90;
-                smoothScrollTo(targetY, 600);
-            }
-        });
-    });
-
-    function smoothScrollTo(targetY, duration = 600) {
-        const startY = window.scrollY;
-        const distance = targetY - startY;
-        const startTime = performance.now();
-
-        function scroll(currentTime) {
-            const elapsed = currentTime - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            const ease = 1 - Math.pow(1 - progress, 3); // ease-out cubic
-            window.scrollTo(0, startY + distance * ease);
-            if (progress < 1) requestAnimationFrame(scroll);
-        }
-
-        requestAnimationFrame(scroll);
-    }
-
     // ===== Counter Animation =====
     const counters = document.querySelectorAll('.counter');
-
     if (counters.length) {
         const observer = new IntersectionObserver(entries => {
             entries.forEach(entry => {
@@ -91,16 +59,15 @@ document.addEventListener('DOMContentLoaded', () => {
         function update(now) {
             const elapsed = now - startTime;
             const progress = Math.min(elapsed / duration, 1);
-            const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+            const eased = 1 - Math.pow(1 - progress, 3);
             current = Math.floor(target * eased);
             element.textContent = current.toLocaleString('en-IN');
             if (progress < 1) requestAnimationFrame(update);
         }
-
         requestAnimationFrame(update);
     }
 
-    // ===== AOS Init (scroll animations) =====
+    // ===== AOS Init =====
     if (typeof AOS !== 'undefined') {
         AOS.init({
             duration: 900,
@@ -110,7 +77,242 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ===== Back-to-top button (optional) =====
+    // ===== Smooth Scroll =====
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+            const href = this.getAttribute('href');
+            if (href && href.length > 1) {
+                e.preventDefault();
+                const target = document.querySelector(href);
+                if (target) {
+                    const offset = 90;
+                    const targetPosition = target.getBoundingClientRect().top + window.pageYOffset - offset;
+                    window.scrollTo({
+                        top: targetPosition,
+                        behavior: 'smooth'
+                    });
+                }
+            }
+        });
+    });
+
+    // ===== EMI Calculator =====
+    if (document.getElementById('loanAmount')) {
+        const loanAmountInput = document.getElementById('loanAmount');
+        const loanAmountRange = document.getElementById('loanAmountRange');
+        const interestRateInput = document.getElementById('interestRate');
+        const interestRateRange = document.getElementById('interestRateRange');
+        const loanTenureInput = document.getElementById('loanTenure');
+        const loanTenureRange = document.getElementById('loanTenureRange');
+
+        const emiAmountEl = document.getElementById('emiAmount');
+        const principalAmountEl = document.getElementById('principalAmount');
+        const totalInterestEl = document.getElementById('totalInterest');
+        const totalAmountEl = document.getElementById('totalAmount');
+
+        // Sync inputs with ranges
+        loanAmountInput.addEventListener('input', e => {
+            loanAmountRange.value = e.target.value;
+            calculateEMI();
+        });
+
+        loanAmountRange.addEventListener('input', e => {
+            loanAmountInput.value = e.target.value;
+            calculateEMI();
+        });
+
+        interestRateInput.addEventListener('input', e => {
+            interestRateRange.value = e.target.value;
+            calculateEMI();
+        });
+
+        interestRateRange.addEventListener('input', e => {
+            interestRateInput.value = e.target.value;
+            calculateEMI();
+        });
+
+        loanTenureInput.addEventListener('input', e => {
+            loanTenureRange.value = e.target.value;
+            calculateEMI();
+        });
+
+        loanTenureRange.addEventListener('input', e => {
+            loanTenureInput.value = e.target.value;
+            calculateEMI();
+        });
+
+        // EMI Calculation
+        function calculateEMI() {
+            const P = parseFloat(loanAmountInput.value) || 1000000;
+            const R = (parseFloat(interestRateInput.value) || 10.5) / 12 / 100;
+            const N = (parseFloat(loanTenureInput.value) || 5) * 12;
+
+            const emi = (P * R * Math.pow(1 + R, N)) / (Math.pow(1 + R, N) - 1);
+            const totalPayment = emi * N;
+            const totalInterest = totalPayment - P;
+
+            emiAmountEl.textContent = `₹${Math.round(emi).toLocaleString('en-IN')}`;
+            principalAmountEl.textContent = `₹${P.toLocaleString('en-IN')}`;
+            totalInterestEl.textContent = `₹${Math.round(totalInterest).toLocaleString('en-IN')}`;
+            totalAmountEl.textContent = `₹${Math.round(totalPayment).toLocaleString('en-IN')}`;
+
+            updateChart(P, totalInterest);
+        }
+
+        // Chart.js
+        let emiChart = null;
+        const ctx = document.getElementById('emiChart');
+
+        if (ctx && typeof Chart !== 'undefined') {
+            function updateChart(principal, interest) {
+                const chartData = {
+                    labels: ['Principal Amount', 'Total Interest'],
+                    datasets: [{
+                        data: [principal, interest],
+                        backgroundColor: ['#0A1628', '#F5A623'],
+                        borderWidth: 0
+                    }]
+                };
+
+                if (emiChart) {
+                    emiChart.data = chartData;
+                    emiChart.update();
+                } else {
+                    emiChart = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: chartData,
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 15,
+                                        font: { size: 12, family: 'Inter' }
+                                    }
+                                }
+                            },
+                            cutout: '65%'
+                        }
+                    });
+                }
+            }
+        }
+
+        // Initial calculation
+        calculateEMI();
+    }
+
+    // ===== Pincode Search =====
+    const pincodeInput = document.getElementById('pincodeInput');
+    const searchPincode = document.getElementById('searchPincode');
+    const pincodeResults = document.getElementById('pincodeResults');
+    const lendersGrid = document.getElementById('lendersGrid');
+
+    if (searchPincode && pincodeInput) {
+        searchPincode.addEventListener('click', () => {
+            const pincode = pincodeInput.value.trim();
+
+            if (pincode.length !== 6 || !/^[0-9]{6}$/.test(pincode)) {
+                showToast('Please enter a valid 6-digit pincode', 'error');
+                return;
+            }
+
+            // Simulated lender data
+            const lenders = [
+                { name: 'HDFC Bank', rate: '8.5%' },
+                { name: 'ICICI Bank', rate: '8.7%' },
+                { name: 'SBI', rate: '8.6%' },
+                { name: 'Axis Bank', rate: '8.9%' },
+                { name: 'Kotak Mahindra', rate: '9.0%' },
+                { name: 'Bajaj Finserv', rate: '9.5%' }
+            ];
+
+            lendersGrid.innerHTML = '';
+            lenders.forEach(lender => {
+                const lenderDiv = document.createElement('div');
+                lenderDiv.className = 'lender-item';
+                lenderDiv.innerHTML = `
+                    <strong>${lender.name}</strong>
+                    <span>From ${lender.rate} p.a.</span>
+                `;
+                lendersGrid.appendChild(lenderDiv);
+            });
+
+            pincodeResults.style.display = 'block';
+            pincodeResults.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            showToast('Lenders found in your area!', 'success');
+        });
+
+        pincodeInput.addEventListener('keypress', e => {
+            if (e.key === 'Enter') {
+                searchPincode.click();
+            }
+        });
+    }
+
+    // ===== Business Loan Form =====
+    const businessLoanForm = document.getElementById('businessLoanForm');
+    if (businessLoanForm) {
+        businessLoanForm.addEventListener('submit', e => {
+            e.preventDefault();
+
+            const formData = new FormData(businessLoanForm);
+            const data = Object.fromEntries(formData.entries());
+
+            if (!data.name || !data.phone || !data.loanAmount) {
+                showToast('Please fill all required fields', 'error');
+                return;
+            }
+
+            const phoneClean = data.phone.replace(/[^0-9]/g, '');
+            if (phoneClean.length !== 10) {
+                showToast('Enter a valid 10-digit mobile number', 'error');
+                return;
+            }
+
+            // WhatsApp message
+            const msg = 
+                `Hi Finarrow!%0A%0A` +
+                `I'm interested in a Business Loan:%0A%0A` +
+                `Name: ${data.name}%0A` +
+                `Phone: ${data.phone}%0A` +
+                `Email: ${data.email || 'Not provided'}%0A` +
+                `Loan Amount: ${data.loanAmount}%0A` +
+                `Message: ${data.message || 'No additional message'}`;
+
+            const waUrl = `https://wa.me/917838393421?text=${msg}`;
+
+            showToast('Redirecting to WhatsApp...', 'success');
+            setTimeout(() => {
+                window.open(waUrl, '_blank');
+                businessLoanForm.reset();
+            }, 800);
+        });
+    }
+
+    // ===== Toast Notifications =====
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `finarrow-toast finarrow-toast-${type}`;
+        toast.innerHTML = `
+            <span class="toast-icon">
+                ${type === 'success' ? '<i class="fas fa-check-circle"></i>' : 
+                  type === 'error' ? '<i class="fas fa-exclamation-circle"></i>' : 
+                  '<i class="fas fa-info-circle"></i>'}
+            </span>
+            <span>${message}</span>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.classList.add('show'), 50);
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    // ===== Back to Top Button =====
     const backToTop = document.createElement('button');
     backToTop.className = 'back-to-top';
     backToTop.innerHTML = '<i class="fas fa-arrow-up"></i>';
@@ -125,133 +327,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     backToTop.addEventListener('click', () => {
-        smoothScrollTo(0, 600);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
-    // ===== Hero video safe autoplay =====
+    // ===== Hero Video Autoplay =====
     const heroVideo = document.querySelector('.hero-video');
     if (heroVideo) {
         heroVideo.play().catch(() => {
-            // Autoplay blocked on some mobiles – ignore silently
+            // Autoplay blocked - silent fail
         });
     }
 
-    // ===== Contact form → WhatsApp redirect (if form exists) =====
-    const contactForm = document.getElementById('contactForm');
-    if (contactForm) {
-        contactForm.addEventListener('submit', e => {
-            e.preventDefault();
-
-            const formData = new FormData(contactForm);
-            const data = Object.fromEntries(formData.entries());
-
-            if (!data.name || !data.phone) {
-                showToast('Please fill all required fields.', 'error');
-                return;
-            }
-
-            const phoneClean = (data.phone || '').replace(/[^0-9]/g, '');
-            if (phoneClean.length < 10) {
-                showToast('Enter a valid phone number.', 'error');
-                return;
-            }
-
-            if (data.email && !validateEmail(data.email)) {
-                showToast('Enter a valid email address.', 'error');
-                return;
-            }
-
-            const msg =
-                `Hi Finarrow,%0A%0A` +
-                `Name: ${data.name || ''}%0A` +
-                `Phone: ${data.phone || ''}%0A` +
-                `Email: ${data.email || ''}%0A` +
-                `Loan Type: ${data.loanType || ''}%0A` +
-                `Amount: ${data.amount || ''}%0A` +
-                `Message: ${data.message || ''}`;
-
-            const waUrl = `https://wa.me/917838393421?text=${msg}`;
-            showToast('Redirecting to WhatsApp...', 'success');
-            setTimeout(() => {
-                window.open(waUrl, '_blank');
-                contactForm.reset();
-            }, 800);
-        });
-    }
-
-    function validateEmail(email) {
-        const re = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-        return re.test(email);
-    }
-
-    // ===== Toast Notifications =====
-    function showToast(message, type = 'info') {
-        const toast = document.createElement('div');
-        toast.className = `finarrow-toast finarrow-toast-${type}`;
-        toast.innerHTML = `
-            <span class="toast-icon">
-                ${type === 'success'
-                    ? '<i class="fas fa-check-circle"></i>'
-                    : type === 'error'
-                    ? '<i class="fas fa-exclamation-circle"></i>'
-                    : '<i class="fas fa-info-circle"></i>'}
-            </span>
-            <span class="toast-message">${message}</span>
-        `;
-        document.body.appendChild(toast);
-
-        setTimeout(() => toast.classList.add('show'), 50);
-        setTimeout(() => {
-            toast.classList.remove('show');
-            setTimeout(() => toast.remove(), 300);
-        }, 3000);
-    }
-
-    // ===== Optional: Custom cursor only on desktop =====
-    if (window.innerWidth > 1024) {
-        const cursor = document.createElement('div');
-        const follower = document.createElement('div');
-        cursor.className = 'finarrow-cursor';
-        follower.className = 'finarrow-cursor-follower';
-        document.body.appendChild(cursor);
-        document.body.appendChild(follower);
-
-        let mouseX = 0;
-        let mouseY = 0;
-        let fx = 0;
-        let fy = 0;
-
-        document.addEventListener('mousemove', e => {
-            mouseX = e.clientX;
-            mouseY = e.clientY;
-            cursor.style.transform = `translate3d(${mouseX}px, ${mouseY}px, 0)`;
-        });
-
-        function animateFollower() {
-            fx += (mouseX - fx) * 0.12;
-            fy += (mouseY - fy) * 0.12;
-            follower.style.transform = `translate3d(${fx}px, ${fy}px, 0)`;
-            requestAnimationFrame(animateFollower);
-        }
-        animateFollower();
-
-        const hoverTargets = document.querySelectorAll('a, button, .btn-primary, .btn-outline, .service-card');
-        hoverTargets.forEach(el => {
-            el.addEventListener('mouseenter', () => {
-                cursor.classList.add('active');
-                follower.classList.add('active');
-            });
-            el.addEventListener('mouseleave', () => {
-                cursor.classList.remove('active');
-                follower.classList.remove('active');
-            });
-        });
-    }
-
-    console.log('%cFinarrow Professional Theme Loaded', 'color:#F5A623;font-weight:700;font-size:14px;');
+    console.log('%c🚀 Finarrow Website Loaded!', 'color:#F5A623;font-weight:bold;font-size:16px;');
 });
 
-// ===== Extra styles for cursor & toast (injected) =====
+// ===== Extra Styles (Toast & Back to Top) =====
 const extraStyle = document.createElement('style');
 extraStyle.textContent = `
 .finarrow-toast {
@@ -271,42 +361,16 @@ extraStyle.textContent = `
     transition: all 0.25s ease;
     font-size: 14px;
 }
+
 .finarrow-toast.show {
     opacity: 1;
     transform: translateY(0);
 }
+
 .finarrow-toast-success .toast-icon { color: #16A34A; }
 .finarrow-toast-error .toast-icon { color: #DC2626; }
 .finarrow-toast-info .toast-icon { color: #2563EB; }
-.toast-icon i { font-size: 18px; }
-.finarrow-cursor,
-.finarrow-cursor-follower {
-    position: fixed;
-    top: 0;
-    left: 0;
-    pointer-events: none;
-    z-index: 1200;
-    transform: translate3d(-100px,-100px,0);
-    transition: transform 0.15s ease-out;
-}
-.finarrow-cursor {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #F5A623;
-}
-.finarrow-cursor-follower {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    border: 2px solid rgba(245,166,35,0.6);
-}
-.finarrow-cursor.active {
-    transform: scale(1.8);
-}
-.finarrow-cursor-follower.active {
-    transform: scale(1.3);
-}
+
 .back-to-top {
     position: fixed;
     bottom: 32px;
@@ -318,10 +382,10 @@ extraStyle.textContent = `
     background: linear-gradient(135deg,#F5A623,#FF8C42);
     color: #fff;
     display: flex;
-    align-items:center;
-    justify-content:center;
-    font-size:18px;
-    cursor:pointer;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    cursor: pointer;
     box-shadow: 0 10px 30px rgba(0,0,0,0.25);
     opacity: 0;
     visibility: hidden;
@@ -329,16 +393,15 @@ extraStyle.textContent = `
     transition: all 0.25s ease;
     z-index: 1050;
 }
+
 .back-to-top.show {
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
 }
-@media (max-width: 1024px) {
-    .finarrow-cursor,
-    .finarrow-cursor-follower {
-        display:none;
-    }
+
+.back-to-top:hover {
+    transform: translateY(-3px);
 }
 `;
 document.head.appendChild(extraStyle);
